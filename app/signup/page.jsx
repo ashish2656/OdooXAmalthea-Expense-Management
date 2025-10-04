@@ -1,163 +1,240 @@
-"use client"
+'use client'
 
-import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
-import useSWR from "swr"
-import { motion, AnimatePresence } from "framer-motion"
-import { fetcher } from "@/lib/fetcher"
-import { CountriesSelect } from "@/components/shared/countries-select"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Building2, Mail, Lock, User, Globe, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 export default function SignupPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirm, setConfirm] = useState("")
-  const [error, setError] = useState("")
-  const [showCompanySetup, setShowCompanySetup] = useState(false)
-  const [country, setCountry] = useState("")
-  const [currency, setCurrency] = useState("")
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    country: ''
+  })
+  const [countries, setCountries] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const router = useRouter()
 
-  const brandVars = { "--primary": "oklch(0.6 0.12 255)", "--primary-foreground": "oklch(0.98 0 0)" }
-
-  // mock "first signup"
   useEffect(() => {
-    const first = localStorage.getItem("companyCreated") !== "true"
-    setShowCompanySetup(first)
+    // Fetch countries on component mount
+    fetchCountries()
   }, [])
 
-  const onSubmit = (e) => {
+  const fetchCountries = async () => {
+    try {
+      const response = await fetch('/api/countries')
+      const data = await response.json()
+      setCountries(data.countries)
+    } catch (error) {
+      console.error('Failed to fetch countries:', error)
+    }
+  }
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleCountryChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      country: value
+    }))
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setError("")
-    if (password !== confirm) {
-      setError("Passwords do not match.")
-      return
+    setLoading(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSuccess('Account created successfully! Redirecting to admin dashboard...')
+        setTimeout(() => {
+          router.push('/admin')
+        }, 2000)
+      } else {
+        setError(data.error || 'Something went wrong')
+      }
+    } catch (error) {
+      setError('Network error. Please try again.')
+    } finally {
+      setLoading(false)
     }
-    if (showCompanySetup && (!country || !currency)) {
-      setError("Please select country and currency.")
-      return
-    }
-    if (showCompanySetup) {
-      localStorage.setItem("companyCountry", country)
-      localStorage.setItem("companyCurrency", currency)
-      localStorage.setItem("companyCreated", "true")
-    }
-    console.log("[v0] Signup:", { email, country, currency })
-    window.location.href = "/admin"
   }
 
   return (
-    <main className="min-h-[100svh] flex items-center justify-center bg-background" style={brandVars}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-100 to-slate-200 flex items-center justify-center p-4">
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
-        className="w-full max-w-xl bg-card shadow-lg rounded-2xl border border-border p-6"
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-lg"
       >
-        <h1 className="text-2xl font-semibold text-foreground">Create your account</h1>
-        <p className="text-muted-foreground mt-1">Sign up to get started</p>
-
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          {error ? <p className="text-sm text-[oklch(0.6_0.2_25)]">{error}</p> : null}
-
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Password</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-input bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring"
-              />
+        <Card className="shadow-lg border-0">
+          <CardHeader className="text-center pb-6">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-slate-800 rounded-xl">
+                <Building2 className="w-8 h-8 text-white" />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Confirm Password</label>
-              <input
-                type="password"
-                required
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                className="w-full rounded-xl border border-input bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-          </div>
+            <CardTitle className="text-2xl font-bold text-slate-800">
+              Create Admin Account
+            </CardTitle>
+            <CardDescription className="text-slate-600">
+              Set up your company's expense management system
+            </CardDescription>
+          </CardHeader>
 
-          <AnimatePresence>
-            {showCompanySetup && (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                className="rounded-2xl border border-border bg-card p-4"
-              >
-                <h2 className="text-sm font-semibold text-foreground mb-3">Company setup (first signup)</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <CountriesSelect value={country} onChange={setCountry} />
-                  <CurrencySelect selected={currency} setSelected={setCurrency} />
-                </div>
-              </motion.div>
+          <CardContent className="space-y-6">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
-          </AnimatePresence>
 
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-primary text-primary-foreground px-4 py-2 font-medium hover:opacity-90 transition"
-          >
-            Create account
-          </button>
+            {success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-700">{success}</AlertDescription>
+              </Alert>
+            )}
 
-          <p className="text-sm text-muted-foreground text-center">
-            {"Already have an account? "}
-            <Link href="/login" className="text-primary hover:underline">
-              Sign in
-            </Link>
-          </p>
-        </form>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-slate-700">Full Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="pl-10 border-slate-300 focus:border-slate-500"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-slate-700">Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="pl-10 border-slate-300 focus:border-slate-500"
+                    placeholder="Enter your email address"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="country" className="text-slate-700">Country</Label>
+                <div className="relative">
+                  <Globe className="absolute left-3 top-3 h-4 w-4 text-slate-400 z-10" />
+                  <Select onValueChange={handleCountryChange} required>
+                    <SelectTrigger className="pl-10 border-slate-300 focus:border-slate-500">
+                      <SelectValue placeholder="Select your country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countries.map((country) => (
+                        <SelectItem key={country.name} value={country.name}>
+                          <div className="flex items-center gap-2">
+                            <span>{country.flag}</span>
+                            <span>{country.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-slate-700">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="pl-10 border-slate-300 focus:border-slate-500"
+                    placeholder="Create a strong password"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-slate-700">Confirm Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    className="pl-10 border-slate-300 focus:border-slate-500"
+                    placeholder="Confirm your password"
+                  />
+                </div>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full bg-slate-800 hover:bg-slate-900 text-white py-2.5"
+                disabled={loading}
+              >
+                {loading ? 'Creating Account...' : 'Create Admin Account'}
+              </Button>
+            </form>
+
+            <div className="text-center text-sm text-slate-600">
+              Already have an account?{' '}
+              <Link href="/login" className="font-medium text-slate-800 hover:text-slate-900">
+                Sign in here
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
-    </main>
-  )
-}
-
-function CurrencySelect({ selected, setSelected }) {
-  // derive options from restcountries if available, else fall back
-  const { data: countries } = useSWR("https://restcountries.com/v3.1/all?fields=name,currencies", fetcher)
-
-  const currencyOptions = useMemo(() => {
-    if (!countries) return ["USD", "EUR", "GBP"]
-    const set = new Set()
-    countries.forEach((c) => {
-      if (c.currencies) {
-        Object.keys(c.currencies).forEach((code) => set.add(code))
-      }
-    })
-    return Array.from(set).sort().slice(0, 200)
-  }, [countries])
-
-  return (
-    <div>
-      <label className="block text-sm font-medium text-foreground mb-1">Currency</label>
-      <select
-        value={selected}
-        onChange={(e) => setSelected(e.target.value)}
-        className="w-full rounded-xl border border-input bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring"
-      >
-        <option value="">Select currency</option>
-        {currencyOptions.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
     </div>
   )
 }
