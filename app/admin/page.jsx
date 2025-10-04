@@ -60,6 +60,16 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState(null)
   const [showUserDialog, setShowUserDialog] = useState(false)
   const [userAction, setUserAction] = useState('') // 'edit' or 'delete'
+  
+  // Add user form
+  const [showAddUserDialog, setShowAddUserDialog] = useState(false)
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'EMPLOYEE'
+  })
+  const [addUserLoading, setAddUserLoading] = useState(false)
 
   // Approval Rules management
   const [approvalRules, setApprovalRules] = useState([])
@@ -166,6 +176,40 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       setError('Network error. Please try again.')
+    }
+  }
+
+  const addUser = async () => {
+    try {
+      setAddUserLoading(true)
+      setError('')
+      setSuccess('')
+
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser)
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSuccess('User created successfully!')
+        setShowAddUserDialog(false)
+        setNewUser({
+          name: '',
+          email: '',
+          password: '',
+          role: 'EMPLOYEE'
+        })
+        fetchUsers()
+      } else {
+        setError(data.error || 'Failed to create user')
+      }
+    } catch (error) {
+      setError('Network error. Please try again.')
+    } finally {
+      setAddUserLoading(false)
     }
   }
 
@@ -389,7 +433,7 @@ export default function AdminDashboard() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>User Management</CardTitle>
-                  <Button>
+                  <Button onClick={() => setShowAddUserDialog(true)}>
                     <UserPlus className="w-4 h-4 mr-2" />
                     Add User
                   </Button>
@@ -414,11 +458,6 @@ export default function AdminDashboard() {
                             <Badge className={getRoleColor(user.role)}>
                               {user.role}
                             </Badge>
-                            {!user.isActive && (
-                              <Badge variant="outline" className="text-red-600">
-                                Inactive
-                              </Badge>
-                            )}
                           </div>
                           <p className="text-sm text-slate-600 mt-1">{user.email}</p>
                           <p className="text-xs text-slate-400 mt-1">
@@ -560,6 +599,103 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Add User Dialog */}
+      <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account with role and credentials
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                placeholder="Enter full name"
+                value={newUser.name}
+                onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter email address"
+                value={newUser.email}
+                onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter password (min 6 characters)"
+                value={newUser.password}
+                onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select 
+                value={newUser.role} 
+                onValueChange={(value) => setNewUser({...newUser, role: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EMPLOYEE">Employee</SelectItem>
+                  <SelectItem value="MANAGER">Manager</SelectItem>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {error && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-700">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-700">
+                  {success}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAddUserDialog(false)}
+              disabled={addUserLoading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={addUser}
+              disabled={addUserLoading || !newUser.name || !newUser.email || !newUser.password}
+            >
+              {addUserLoading ? 'Creating...' : 'Create User'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

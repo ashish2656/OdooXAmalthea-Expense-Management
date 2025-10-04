@@ -9,6 +9,7 @@ export async function GET(request) {
     if (authResult.error) return authResult.error
 
     const user = authResult.user
+    console.log('Dashboard API - User:', user.id, user.email, user.companyId)
 
     const roleCheck = requireRole(user, 'ADMIN')
     if (roleCheck instanceof NextResponse) return roleCheck
@@ -31,7 +32,7 @@ export async function GET(request) {
     ] = await Promise.all([
       // Total users in company
       prisma.user.count({
-        where: { companyId: user.companyId, isActive: true }
+        where: { companyId: user.companyId }
       }),
 
       // Total expenses
@@ -56,7 +57,7 @@ export async function GET(request) {
         where: {
           user: { companyId: user.companyId },
           status: 'APPROVED',
-          approvedAt: { gte: startOfMonth }
+          updatedAt: { gte: startOfMonth }
         }
       }),
 
@@ -65,7 +66,7 @@ export async function GET(request) {
         where: {
           user: { companyId: user.companyId },
           status: 'APPROVED',
-          approvedAt: {
+          updatedAt: {
             gte: startOfLastMonth,
             lte: endOfLastMonth
           }
@@ -113,6 +114,14 @@ export async function GET(request) {
         where: { companyId: user.companyId }
       })
     ])
+
+    console.log('Dashboard API - Counts:', {
+      totalUsers,
+      totalExpenses,
+      pendingApprovals,
+      approvedExpensesThisMonth,
+      totalExpenseAmount: totalExpenseAmount._sum.amount
+    })
 
     // Calculate month-over-month growth
     const expenseGrowth = approvedExpensesLastMonth > 0 
