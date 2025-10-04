@@ -55,17 +55,17 @@ export async function GET(request) {
     // Calculate summary statistics
     const summary = {
       totalExpenses: expenses.length,
-      totalAmount: expenses.reduce((sum, exp) => sum + exp.amount, 0),
+      totalAmount: expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0),
       byStatus: expenses.reduce((acc, exp) => {
         acc[exp.status] = (acc[exp.status] || 0) + 1
         return acc
       }, {}),
       byCategory: expenses.reduce((acc, exp) => {
-        acc[exp.category] = (acc[exp.category] || 0) + exp.amount
+        acc[exp.category] = (acc[exp.category] || 0) + parseFloat(exp.amount || 0)
         return acc
       }, {}),
       averageAmount: expenses.length > 0 
-        ? expenses.reduce((sum, exp) => sum + exp.amount, 0) / expenses.length 
+        ? expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0) / expenses.length 
         : 0
     }
 

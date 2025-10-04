@@ -34,6 +34,8 @@ export default function ManagerDashboard() {
   const router = useRouter()
   const [user, setUser] = useState(null)
   const [pendingApprovals, setPendingApprovals] = useState([])
+  const [approvedApprovals, setApprovedApprovals] = useState([])
+  const [rejectedApprovals, setRejectedApprovals] = useState([])
   const [stats, setStats] = useState({
     totalPending: 0,
     totalApproved: 0,
@@ -61,10 +63,13 @@ export default function ManagerDashboard() {
     'OTHER': 'Other'
   }
 
-  // Fetch user data and pending approvals
+  // Fetch user data and all approval data
   useEffect(() => {
     fetchUserData()
     fetchPendingApprovals()
+    fetchApprovedApprovals()
+    fetchRejectedApprovals()
+    fetchStats()
   }, [])
 
   const fetchUserData = async () => {
@@ -92,19 +97,6 @@ export default function ManagerDashboard() {
       if (response.ok) {
         const data = await response.json()
         setPendingApprovals(data.approvals || [])
-        
-        // Calculate stats
-        const totalPending = data.approvals?.length || 0
-        const currentMonth = new Date().getMonth()
-        const thisMonth = data.approvals?.filter(approval => 
-          new Date(approval.expense.createdAt).getMonth() === currentMonth
-        ).length || 0
-        
-        setStats(prev => ({ 
-          ...prev, 
-          totalPending,
-          thisMonth
-        }))
       } else {
         console.error('Failed to fetch pending approvals')
       }
@@ -112,6 +104,54 @@ export default function ManagerDashboard() {
       console.error('Error fetching approvals:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchApprovedApprovals = async () => {
+    try {
+      const response = await fetch('/api/approvals/approved')
+      if (response.ok) {
+        const data = await response.json()
+        setApprovedApprovals(data.approvals || [])
+      } else {
+        console.error('Failed to fetch approved approvals')
+      }
+    } catch (error) {
+      console.error('Error fetching approved approvals:', error)
+    }
+  }
+
+  const fetchRejectedApprovals = async () => {
+    try {
+      const response = await fetch('/api/approvals/rejected')
+      if (response.ok) {
+        const data = await response.json()
+        setRejectedApprovals(data.approvals || [])
+      } else {
+        console.error('Failed to fetch rejected approvals')
+      }
+    } catch (error) {
+      console.error('Error fetching rejected approvals:', error)
+    }
+  }
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/approvals/stats')
+      if (response.ok) {
+        const data = await response.json()
+        setStats(data.stats || {
+          totalPending: 0,
+          totalApproved: 0,
+          totalRejected: 0,
+          thisMonth: 0,
+          teamExpenses: 0
+        })
+      } else {
+        console.error('Failed to fetch stats')
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error)
     }
   }
 
@@ -149,7 +189,11 @@ export default function ManagerDashboard() {
       if (response.ok) {
         setSuccess(`Expense ${approvalAction}d successfully!`)
         setShowApprovalDialog(false)
-        fetchPendingApprovals() // Refresh approvals
+        // Refresh all data
+        fetchPendingApprovals()
+        fetchApprovedApprovals()
+        fetchRejectedApprovals()
+        fetchStats()
       } else {
         setError(data.error || `Failed to ${approvalAction} expense`)
       }
@@ -325,7 +369,7 @@ export default function ManagerDashboard() {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-600 mb-4">
                           <div className="flex items-center">
                             <IndianRupee className="w-4 h-4 mr-1" />
-                            ₹{Number(approval.expense.amount || 0).toFixed(2)}
+                            ₹{parseFloat(approval.expense.amount || 0).toFixed(2)}
                           </div>
                           <div>{categoryLabels[approval.expense.category] || approval.expense.category}</div>
                           <div>{new Date(approval.expense.createdAt).toLocaleDateString()}</div>
@@ -374,6 +418,168 @@ export default function ManagerDashboard() {
           </CardContent>
         </Card>
 
+        {/* Approved Expenses */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <CheckCircle2 className="w-5 h-5 mr-2 text-green-600" />
+              Approved Expenses
+            </CardTitle>
+            <CardDescription>
+              Recently approved expense requests
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {approvedApprovals.length === 0 ? (
+                <div className="text-center py-6">
+                  <CheckCircle2 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500">No approved expenses yet</p>
+                  <p className="text-sm text-slate-400 mt-1">
+                    Approved expenses will appear here
+                  </p>
+                </div>
+              ) : (
+                approvedApprovals.map((approval) => (
+                  <motion.div
+                    key={approval.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="border border-green-200 rounded-lg p-4 bg-green-50 hover:shadow-sm transition-shadow"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <div className="flex items-center space-x-2">
+                            <User className="w-4 h-4 text-slate-400" />
+                            <span className="font-medium text-slate-900">{approval.expense.user.name}</span>
+                          </div>
+                          <Badge className="bg-green-100 text-green-800">
+                            APPROVED
+                          </Badge>
+                        </div>
+                        
+                        <h3 className="font-medium text-slate-900 mb-2">{approval.expense.description}</h3>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-slate-600 mb-2">
+                          <div className="flex items-center">
+                            <IndianRupee className="w-4 h-4 mr-1" />
+                            ₹{parseFloat(approval.expense.amount || 0).toFixed(2)}
+                          </div>
+                          <div>{categoryLabels[approval.expense.category] || approval.expense.category}</div>
+                          <div>{new Date(approval.updatedAt).toLocaleDateString()}</div>
+                        </div>
+
+                        {approval.comments && (
+                          <div className="mt-2 p-2 bg-green-100 rounded text-sm">
+                            <MessageSquare className="w-3 h-3 inline mr-1" />
+                            <strong>Approval Note:</strong> {approval.comments}
+                          </div>
+                        )}
+
+                        {approval.expense.receiptUrl && (
+                          <div className="mt-3">
+                            <a 
+                              href={approval.expense.receiptUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
+                            >
+                              <Receipt className="w-3 h-3 mr-1" />
+                              View Receipt
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Rejected Expenses */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <XCircle className="w-5 h-5 mr-2 text-red-600" />
+              Rejected Expenses
+            </CardTitle>
+            <CardDescription>
+              Recently rejected expense requests
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {rejectedApprovals.length === 0 ? (
+                <div className="text-center py-6">
+                  <XCircle className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500">No rejected expenses</p>
+                  <p className="text-sm text-slate-400 mt-1">
+                    Rejected expenses will appear here
+                  </p>
+                </div>
+              ) : (
+                rejectedApprovals.map((approval) => (
+                  <motion.div
+                    key={approval.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="border border-red-200 rounded-lg p-4 bg-red-50 hover:shadow-sm transition-shadow"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <div className="flex items-center space-x-2">
+                            <User className="w-4 h-4 text-slate-400" />
+                            <span className="font-medium text-slate-900">{approval.expense.user.name}</span>
+                          </div>
+                          <Badge className="bg-red-100 text-red-800">
+                            REJECTED
+                          </Badge>
+                        </div>
+                        
+                        <h3 className="font-medium text-slate-900 mb-2">{approval.expense.description}</h3>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-slate-600 mb-2">
+                          <div className="flex items-center">
+                            <IndianRupee className="w-4 h-4 mr-1" />
+                            ₹{parseFloat(approval.expense.amount || 0).toFixed(2)}
+                          </div>
+                          <div>{categoryLabels[approval.expense.category] || approval.expense.category}</div>
+                          <div>{new Date(approval.updatedAt).toLocaleDateString()}</div>
+                        </div>
+
+                        {approval.comments && (
+                          <div className="mt-2 p-2 bg-red-100 rounded text-sm">
+                            <MessageSquare className="w-3 h-3 inline mr-1" />
+                            <strong>Rejection Reason:</strong> {approval.comments}
+                          </div>
+                        )}
+
+                        {approval.expense.receiptUrl && (
+                          <div className="mt-3">
+                            <a 
+                              href={approval.expense.receiptUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
+                            >
+                              <Receipt className="w-3 h-3 mr-1" />
+                              View Receipt
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Approval Dialog */}
         <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
           <DialogContent className="max-w-md">
@@ -386,7 +592,7 @@ export default function ManagerDashboard() {
                   <>
                     <strong>{selectedApproval.expense.description}</strong> by {selectedApproval.expense.user.name}
                     <br />
-                    Amount: ₹{Number(selectedApproval.expense.amount || 0).toFixed(2)}
+                    Amount: ₹{parseFloat(selectedApproval.expense.amount || 0).toFixed(2)}
                   </>
                 )}
               </DialogDescription>

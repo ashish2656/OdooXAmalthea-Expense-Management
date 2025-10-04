@@ -1,4 +1,9 @@
-imporexport async function GET(request, { params }) {
+import { NextResponse } from 'next/server'
+import { authMiddleware, requireRole, getUserFromRequest } from '@/lib/middleware'
+import { prisma } from '@/lib/prisma'
+
+// GET /api/admin/users/[id] - Get specific user
+export async function GET(request, { params }) {
   const { id } = params
 
   try {
@@ -8,9 +13,49 @@ imporexport async function GET(request, { params }) {
     const adminUser = authResult.user
 
     const roleCheck = requireRole(adminUser, 'ADMIN')
-    if (roleCheck instanceof NextResponse) return roleCheckResponse } from 'next/server'
-import { authMiddleware, requireRole, getUserFromRequest } from '@/lib/middleware'
-import { prisma } from '@/lib/prisma'
+    if (roleCheck instanceof NextResponse) return roleCheck
+
+    const user = await prisma.user.findUnique({
+      where: { 
+        id,
+        companyId: adminUser.companyId
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        managerId: true,
+        manager: {
+          select: { id: true, name: true, email: true }
+        },
+        _count: {
+          expenses: true,
+          approvals: true,
+          managees: true
+        }
+      }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({ user })
+
+  } catch (error) {
+    console.error('Get user error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
 
 // PUT /api/admin/users/[id] - Update user (role, status)
 export async function PUT(request, { params }) {
@@ -24,9 +69,7 @@ export async function PUT(request, { params }) {
 
     const roleCheck = requireRole(adminUser, 'ADMIN')
     if (roleCheck instanceof NextResponse) return roleCheck
-  const { id: userId } = params
 
-  try {
     const { role, isActive } = await request.json()
 
     // Verify user exists and is in same company

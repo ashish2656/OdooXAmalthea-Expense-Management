@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { authMiddleware, requireRole, getUserFromRequest } from '@/lib/middleware'
+import { authMiddleware, requireRole } from '@/lib/middleware'
 import { processApproval } from '@/lib/expense-utils'
 import { prisma } from '@/lib/prisma'
 
@@ -10,12 +10,11 @@ export async function POST(request, { params }) {
     if (authResult.error) return authResult.error
 
     const user = authResult.user
-    
+
     const roleCheck = requireRole(user, 'MANAGER', 'ADMIN')
     if (roleCheck instanceof NextResponse) return roleCheck
-  const { id: approvalId } = params
 
-  try {
+    const { id: approvalId } = params
     const { comments } = await request.json()
 
     // Verify approval exists and user can approve it
@@ -25,21 +24,18 @@ export async function POST(request, { params }) {
         expense: {
           include: {
             user: {
-              select: { id: true, name: true, email: true, companyId: true }
-            }
-          }
+              select: { id: true, name: true, email: true, companyId: true },
+            },
+          },
         },
         approver: {
-          select: { id: true, name: true, email: true }
-        }
-      }
+          select: { id: true, name: true, email: true },
+        },
+      },
     })
 
     if (!approval) {
-      return NextResponse.json(
-        { error: 'Approval not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Approval not found' }, { status: 404 })
     }
 
     if (approval.status !== 'PENDING') {
@@ -53,18 +49,12 @@ export async function POST(request, { params }) {
     if (user.role === 'ADMIN') {
       // Admin can approve any expense in their company
       if (approval.expense.user.companyId !== user.companyId) {
-        return NextResponse.json(
-          { error: 'Access denied' },
-          { status: 403 }
-        )
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     } else {
       // Manager can only approve if assigned as approver
       if (approval.approverId !== user.id) {
-        return NextResponse.json(
-          { error: 'Access denied' },
-          { status: 403 }
-        )
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     }
 
@@ -78,9 +68,8 @@ export async function POST(request, { params }) {
     return NextResponse.json({
       success: true,
       message: 'Expense approved successfully',
-      approval: updatedApproval
+      approval: updatedApproval,
     })
-
   } catch (error) {
     console.error('Approve expense error:', error)
     return NextResponse.json(

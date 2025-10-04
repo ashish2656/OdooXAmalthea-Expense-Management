@@ -7,16 +7,15 @@ export async function GET(request) {
   const authResult = await authMiddleware(request)
   if (authResult instanceof NextResponse) return authResult
 
-  const roleCheck = requireRole('ADMIN')(request)
+  const user = getUserFromRequest(authResult)
+  const roleCheck = requireRole(user, 'ADMIN')
   if (roleCheck instanceof NextResponse) return roleCheck
-
-  const user = getUserFromRequest(request)
 
   try {
     const approvalRules = await prisma.approvalRule.findMany({
       where: { companyId: user.companyId },
       include: {
-        approver: {
+        specialApprover: {
           select: { id: true, name: true, email: true }
         }
       },
@@ -42,10 +41,9 @@ export async function POST(request) {
   const authResult = await authMiddleware(request)
   if (authResult instanceof NextResponse) return authResult
 
-  const roleCheck = requireRole('ADMIN')(request)
+  const user = getUserFromRequest(authResult)
+  const roleCheck = requireRole(user, 'ADMIN')
   if (roleCheck instanceof NextResponse) return roleCheck
-
-  const user = getUserFromRequest(request)
 
   try {
     const { threshold, approverId } = await request.json()
@@ -98,11 +96,12 @@ export async function POST(request) {
     const approvalRule = await prisma.approvalRule.create({
       data: {
         threshold,
-        approverId,
-        companyId: user.companyId
+        specialApproverId: approverId,
+        companyId: user.companyId,
+        ruleType: 'SPECIFIC_APPROVER'
       },
       include: {
-        approver: {
+        specialApprover: {
           select: { id: true, name: true, email: true }
         }
       }

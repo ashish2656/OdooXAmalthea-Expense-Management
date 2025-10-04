@@ -39,6 +39,7 @@ model User {
   role      Role   @default(EMPLOYEE)
   companyId String
   managerId String?
+  isActive  Boolean @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   

@@ -482,7 +482,7 @@ export default function EmployeeDashboard() {
                             <div className="flex items-center space-x-4 text-sm text-slate-600">
                               <span className="flex items-center">
                                 <IndianRupee className="w-4 h-4 mr-1" />
-                                ₹{Number(expense.amount || 0).toFixed(2)}
+                                ₹{parseFloat(expense.amount || 0).toFixed(2)}
                               </span>
                               <span>{categoryLabels[expense.category] || expense.category}</span>
                               <span>{new Date(expense.createdAt).toLocaleDateString()}</span>

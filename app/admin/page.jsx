@@ -178,6 +178,38 @@ export default function AdminDashboard() {
     }
   }
 
+  const exportToCSV = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/admin/export/expenses')
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `expenses-report-${new Date().toISOString().split('T')[0]}.csv`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        setSuccess('CSV exported successfully!')
+      } else {
+        const data = await response.json()
+        setError(data.error || 'Failed to export CSV')
+      }
+    } catch (error) {
+      setError('Failed to export CSV. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const viewDetailedReport = () => {
+    // Navigate to a detailed report page or open in a new tab
+    const reportUrl = `/admin/reports?date=${new Date().toISOString().split('T')[0]}`
+    window.open(reportUrl, '_blank')
+  }
+
   const getRoleColor = (role) => {
     switch (role) {
       case 'ADMIN': return 'bg-red-100 text-red-800'
@@ -513,13 +545,13 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="flex space-x-2">
-                    <Button>
+                    <Button onClick={viewDetailedReport}>
                       <Eye className="w-4 h-4 mr-2" />
                       View Report
                     </Button>
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={exportToCSV} disabled={loading}>
                       <Download className="w-4 h-4 mr-2" />
-                      Export CSV
+                      {loading ? 'Exporting...' : 'Export CSV'}
                     </Button>
                   </div>
                 </div>

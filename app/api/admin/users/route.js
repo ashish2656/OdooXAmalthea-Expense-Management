@@ -31,8 +31,8 @@ export async function GET(request) {
           name: true,
           email: true,
           role: true,
-          createdAt: true,
           isActive: true,
+          createdAt: true,
           _count: {
             expenses: true,
             approvals: true

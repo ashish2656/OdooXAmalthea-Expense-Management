@@ -157,18 +157,82 @@ export async function POST(request) {
       const workflow = await getApprovalWorkflow(
         newExpense.id, 
         user.companyId, 
-        convertedAmount
+        convertedAmount,
+        user.id
       )
 
-      if (workflow.length === 0) {
-        // Auto-approve if no workflow required
-        await tx.expense.update({
-          where: { id: newExpense.id },
-          data: { status: 'APPROVED' }
-        })
+      // Always create approval entries - expenses should not auto-approve
+      if (workflow.length > 0) {
+        // Create approval entries within the transaction
+        for (const step of workflow) {
+          await tx.approval.create({
+            data: {
+              expenseId: newExpense.id,
+              approverId: step.approverId,
+              stepOrder: step.stepOrder,
+              status: 'PENDING'
+            }
+          })
+        }
       } else {
-        // Create approval entries
-        await createApprovalEntries(newExpense.id, workflow)
+        // If no specific workflow, create default manager approval
+        if (user.managerId) {
+          const manager = await tx.user.findUnique({
+            where: { id: user.managerId },
+            select: { id: true, name: true, email: true, role: true }
+          })
+          
+          if (manager) {
+            await tx.approval.create({
+              data: {
+                expenseId: newExpense.id,
+                approverId: manager.id,
+                stepOrder: 1,
+                status: 'PENDING'
+              }
+            })
+          }
+        } else {
+          // If no manager assigned, find a manager in the company (prefer MANAGER over ADMIN)
+          const manager = await tx.user.findFirst({
+            where: { 
+              companyId: user.companyId, 
+              role: 'MANAGER'
+            },
+            select: { id: true, name: true, email: true, role: true }
+          })
+          
+          if (manager) {
+            await tx.approval.create({
+              data: {
+                expenseId: newExpense.id,
+                approverId: manager.id,
+                stepOrder: 1,
+                status: 'PENDING'
+              }
+            })
+          } else {
+            // Only if no MANAGER found, fall back to ADMIN
+            const admin = await tx.user.findFirst({
+              where: { 
+                companyId: user.companyId, 
+                role: 'ADMIN'
+              },
+              select: { id: true, name: true, email: true, role: true }
+            })
+            
+            if (admin) {
+              await tx.approval.create({
+                data: {
+                  expenseId: newExpense.id,
+                  approverId: admin.id,
+                  stepOrder: 1,
+                  status: 'PENDING'
+                }
+              })
+            }
+          }
+        }
       }
 
       return newExpense
