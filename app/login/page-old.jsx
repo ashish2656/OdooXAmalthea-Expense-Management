@@ -9,7 +9,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
-  // brand color override: blue primary
+  // brand color override primary
   const brandVars = { "--primary": "oklch(0.6 0.12 255)", "--primary-foreground": "oklch(0.98 0 0)" }
 
   const onSubmit = (e) => {
@@ -22,8 +22,8 @@ export default function LoginPage() {
   return (
     <main className="min-h-[100svh] flex items-center justify-center bg-background" style={brandVars}>
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity, y }}
+        animate={{ opacity, y }}
         transition={{ duration: 0.25 }}
         className="w-full max-w-md bg-card shadow-lg rounded-2xl border border-border p-6"
       >
@@ -77,3 +77,5 @@ export default function LoginPage() {
     </main>
   )
 }
+
+

@@ -18,7 +18,7 @@ export function UserManagement() {
     setNewUser({ name: "", role: "Employee", email: "", password: "" })
   }
 
-  const assignRole = (id, role) => setUsers((u) => u.map((x) => (x.id === id ? { ...x, role } : x)))
+  const assignRole = (id, role) => setUsers((u) => u.map((x) => (x.id === id ? { ...x, role } )))
   const defineManager = (id) => alert(`Define manager for user #${id} (mock)`)
 
   return (
@@ -117,3 +117,6 @@ export function UserManagement() {
     </div>
   )
 }
+
+
+

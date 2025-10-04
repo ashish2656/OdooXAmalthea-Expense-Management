@@ -16,7 +16,7 @@ import {
   CheckCircle2, 
   XCircle, 
   Clock, 
-  DollarSign, 
+  IndianRupee, 
   Users, 
   LogOut,
   TrendingUp,
@@ -49,6 +49,17 @@ export default function ManagerDashboard() {
   const [showApprovalDialog, setShowApprovalDialog] = useState(false)
   const [approvalComments, setApprovalComments] = useState('')
   const [approvalAction, setApprovalAction] = useState('') // 'approve' or 'reject'
+
+  const categoryLabels = {
+    'TRAVEL': 'Travel',
+    'FOOD': 'Food & Meals', 
+    'ACCOMMODATION': 'Accommodation',
+    'TRANSPORTATION': 'Transportation',
+    'OFFICE_SUPPLIES': 'Office Supplies',
+    'SOFTWARE': 'Software',
+    'MARKETING': 'Marketing',
+    'OTHER': 'Other'
+  }
 
   // Fetch user data and pending approvals
   useEffect(() => {
@@ -313,10 +324,10 @@ export default function ManagerDashboard() {
                         
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-600 mb-4">
                           <div className="flex items-center">
-                            <DollarSign className="w-4 h-4 mr-1" />
-                            ${approval.expense.amount.toFixed(2)}
+                            <IndianRupee className="w-4 h-4 mr-1" />
+                            ₹{Number(approval.expense.amount || 0).toFixed(2)}
                           </div>
-                          <div>{approval.expense.category}</div>
+                          <div>{categoryLabels[approval.expense.category] || approval.expense.category}</div>
                           <div>{new Date(approval.expense.createdAt).toLocaleDateString()}</div>
                           <div>{approval.expense.user.email}</div>
                         </div>
@@ -375,7 +386,7 @@ export default function ManagerDashboard() {
                   <>
                     <strong>{selectedApproval.expense.description}</strong> by {selectedApproval.expense.user.name}
                     <br />
-                    Amount: ${selectedApproval.expense.amount.toFixed(2)}
+                    Amount: ₹{Number(selectedApproval.expense.amount || 0).toFixed(2)}
                   </>
                 )}
               </DialogDescription>
@@ -424,3 +435,5 @@ export default function ManagerDashboard() {
     </div>
   )
 }
+
+
