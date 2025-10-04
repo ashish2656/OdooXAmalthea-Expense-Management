@@ -1,17 +1,18 @@
 import { NextResponse } from 'next/server'
-import { authMiddleware, requireRole, getUserFromRequest } from '@/lib/middleware'
+import { authMiddleware, requireRole } from '@/lib/middleware'
 import { prisma } from '@/lib/prisma'
 
 // GET /api/admin/approval-rules - Get all approval rules
 export async function GET(request) {
-  const authResult = await authMiddleware(request)
-  if (authResult instanceof NextResponse) return authResult
-
-  const user = getUserFromRequest(authResult)
-  const roleCheck = requireRole(user, 'ADMIN')
-  if (roleCheck instanceof NextResponse) return roleCheck
-
   try {
+    const authResult = await authMiddleware(request)
+    if (authResult.error) return authResult.error
+
+    const user = authResult.user
+
+    const roleCheck = requireRole(user, 'ADMIN')
+    if (roleCheck instanceof NextResponse) return roleCheck
+
     const approvalRules = await prisma.approvalRule.findMany({
       where: { companyId: user.companyId },
       include: {
@@ -38,14 +39,15 @@ export async function GET(request) {
 
 // POST /api/admin/approval-rules - Create new approval rule
 export async function POST(request) {
-  const authResult = await authMiddleware(request)
-  if (authResult instanceof NextResponse) return authResult
-
-  const user = getUserFromRequest(authResult)
-  const roleCheck = requireRole(user, 'ADMIN')
-  if (roleCheck instanceof NextResponse) return roleCheck
-
   try {
+    const authResult = await authMiddleware(request)
+    if (authResult.error) return authResult.error
+
+    const user = authResult.user
+
+    const roleCheck = requireRole(user, 'ADMIN')
+    if (roleCheck instanceof NextResponse) return roleCheck
+
     const { threshold, approverId } = await request.json()
 
     if (!threshold || !approverId) {
