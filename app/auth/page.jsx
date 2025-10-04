@@ -86,6 +86,42 @@ export default function AuthPage() {
     setSuccess('')
 
     // Validation
+    if (!signupData.name.trim()) {
+      setError('Full name is required')
+      setLoading(false)
+      return
+    }
+
+    if (!signupData.email.trim()) {
+      setError('Email address is required')
+      setLoading(false)
+      return
+    }
+
+    if (!signupData.role) {
+      setError('Please select a role')
+      setLoading(false)
+      return
+    }
+
+    if (!signupData.companyName.trim()) {
+      setError('Company name is required')
+      setLoading(false)
+      return
+    }
+
+    if (!signupData.password) {
+      setError('Password is required')
+      setLoading(false)
+      return
+    }
+
+    if (!signupData.confirmPassword) {
+      setError('Please confirm your password')
+      setLoading(false)
+      return
+    }
+
     if (signupData.password !== signupData.confirmPassword) {
       setError('Passwords do not match')
       setLoading(false)
@@ -98,22 +134,17 @@ export default function AuthPage() {
       return
     }
 
-    if (!signupData.role) {
-      setError('Please select a role')
-      setLoading(false)
-      return
-    }
-
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: signupData.name,
-          email: signupData.email,
+          name: signupData.name.trim(),
+          email: signupData.email.trim(),
           password: signupData.password,
+          confirmPassword: signupData.confirmPassword,
           role: signupData.role,
-          companyName: signupData.companyName
+          companyName: signupData.companyName.trim()
         })
       })
 
@@ -265,7 +296,7 @@ export default function AuthPage() {
                 <TabsContent value="signup" className="space-y-4">
                   <form onSubmit={handleSignupSubmit} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="signup-name">Full Name</Label>
+                      <Label htmlFor="signup-name">Full Name <span className="text-red-500">*</span></Label>
                       <Input
                         id="signup-name"
                         type="text"
@@ -277,7 +308,7 @@ export default function AuthPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email Address</Label>
+                      <Label htmlFor="signup-email">Email Address <span className="text-red-500">*</span></Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                         <Input
@@ -293,7 +324,7 @@ export default function AuthPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-role">Role</Label>
+                      <Label htmlFor="signup-role">Role <span className="text-red-500">*</span></Label>
                       <Select value={signupData.role} onValueChange={(value) => setSignupData(prev => ({ ...prev, role: value }))}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select your role" />
@@ -315,7 +346,7 @@ export default function AuthPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-company">Company Name</Label>
+                      <Label htmlFor="signup-company">Company Name <span className="text-red-500">*</span></Label>
                       <Input
                         id="signup-company"
                         type="text"
@@ -327,7 +358,7 @@ export default function AuthPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
+                      <Label htmlFor="signup-password">Password <span className="text-red-500">*</span></Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                         <Input
@@ -350,7 +381,7 @@ export default function AuthPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                      <Label htmlFor="signup-confirm-password">Confirm Password <span className="text-red-500">*</span></Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                         <Input

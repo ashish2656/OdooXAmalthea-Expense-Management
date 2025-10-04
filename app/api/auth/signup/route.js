@@ -4,10 +4,10 @@ import { hashPassword, generateToken } from '@/lib/auth'
 
 export async function POST(request) {
   try {
-    const { name, email, password, confirmPassword, country } = await request.json()
+    const { name, email, password, confirmPassword, role, companyName } = await request.json()
 
     // Validation
-    if (!name || !email || !password || !confirmPassword || !country) {
+    if (!name || !email || !password || !confirmPassword || !role || !companyName) {
       return NextResponse.json(
         { error: 'All fields are required' },
         { status: 400 }
@@ -40,40 +40,31 @@ export async function POST(request) {
       )
     }
 
-    // Fetch currency for the country
-    let currency = 'USD' // default
-    try {
-      const countryResponse = await fetch(`https://restcountries.com/v3.1/name/${country}?fields=currencies`)
-      const countryData = await countryResponse.json()
-      if (countryData && countryData[0] && countryData[0].currencies) {
-        const currencyCode = Object.keys(countryData[0].currencies)[0]
-        currency = currencyCode
-      }
-    } catch (error) {
-      console.error('Error fetching currency:', error)
-    }
+    // Default values
+    const country = 'United States' // default
+    const currency = 'USD' // default
 
     // Hash password
     const hashedPassword = await hashPassword(password)
 
-    // Create company and admin user in a transaction
+    // Create company and user in a transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create company
       const company = await tx.company.create({
         data: {
-          name: `${name}'s Company`,
+          name: companyName,
           country,
           currency
         }
       })
 
-      // Create admin user
+      // Create user with specified role
       const user = await tx.user.create({
         data: {
           name,
           email,
           password: hashedPassword,
-          role: 'ADMIN',
+          role: role,
           companyId: company.id
         }
       })
