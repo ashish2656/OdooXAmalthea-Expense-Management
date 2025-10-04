@@ -24,7 +24,7 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   FileText,
   AlertCircle,
@@ -301,10 +301,10 @@ export default function AdminDashboard() {
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center">
-                    <DollarSign className="h-8 w-8 text-purple-600" />
+                    <IndianRupee className="h-8 w-8 text-purple-600" />
                     <div className="ml-4">
                       <p className="text-sm font-medium text-slate-600">Total Amount</p>
-                      <p className="text-2xl font-bold text-slate-900">${stats.totalExpenseAmount?.toFixed(2) || '0.00'}</p>
+                      <p className="text-2xl font-bold text-slate-900">₹{Number(stats.totalExpenseAmount || 0).toFixed(2)}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -446,7 +446,7 @@ export default function AdminDashboard() {
                       <div key={rule.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
                         <div className="flex-1">
                           <h3 className="font-medium text-slate-900">
-                            Expenses above ${rule.threshold}
+                            Expenses above ₹{rule.threshold}
                           </h3>
                           <p className="text-sm text-slate-600">
                             Approved by: {rule.approver.name} ({rule.approver.email})
@@ -531,3 +531,5 @@ export default function AdminDashboard() {
     </div>
   )
 }
+
+

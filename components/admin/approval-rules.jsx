@@ -13,15 +13,15 @@ export function ApprovalRules() {
   const [rules, setRules] = useState([])
   const [form, setForm] = useState({
     kind: "percentage",
-    sequence: 1,
-    thresholdPct: 10,
+    sequence: 0,
+    thresholdPct: 0,
     approver: "",
     note: "",
   })
 
   const addRule = () => {
     setRules((r) => [{ id: Date.now(), ...form }, ...r])
-    setForm({ kind: "percentage", sequence: 1, thresholdPct: 10, approver: "", note: "" })
+    setForm({ kind: "percentage", sequence: 0, thresholdPct: 0, approver: "", note: "" })
   }
 
   return (
@@ -51,7 +51,7 @@ export function ApprovalRules() {
           <input
             type="number"
             value={form.sequence}
-            onChange={(e) => setForm((f) => ({ ...f, sequence: Number(e.target.value) }))}
+            onChange={(e) => setForm((f) => ({ ...f, sequence: e.target.value }))}
             className="w-full rounded-xl border border-input bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -60,7 +60,7 @@ export function ApprovalRules() {
           <input
             type="number"
             value={form.thresholdPct}
-            onChange={(e) => setForm((f) => ({ ...f, thresholdPct: Number(e.target.value) }))}
+            onChange={(e) => setForm((f) => ({ ...f, thresholdPct: e.target.value }))}
             className="w-full rounded-xl border border-input bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -123,3 +123,6 @@ export function ApprovalRules() {
     </div>
   )
 }
+
+
+

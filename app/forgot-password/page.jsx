@@ -53,8 +53,8 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-100 to-slate-200 flex items-center justify-center p-4">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity, y }}
+        animate={{ opacity, y }}
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
@@ -132,3 +132,4 @@ export default function ForgotPasswordPage() {
     </div>
   )
 }
+

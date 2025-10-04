@@ -19,7 +19,7 @@ import {
   Clock, 
   CheckCircle2, 
   XCircle, 
-  DollarSign, 
+  IndianRupee, 
   Calendar, 
   Upload,
   User,
@@ -53,12 +53,26 @@ export default function EmployeeDashboard() {
     description: '',
     amount: '',
     category: '',
-    receiptUrl: ''
+    receiptUrl: '',
+    currency: 'INR',
+    vendor: '',
+    date: new Date().toISOString().split('T')[0] // Today's date
   })
 
   const categories = [
-    'Travel', 'Meals', 'Office Supplies', 'Software', 'Training', 'Marketing', 'Other'
+    'TRAVEL', 'FOOD', 'ACCOMMODATION', 'TRANSPORTATION', 'OFFICE_SUPPLIES', 'SOFTWARE', 'MARKETING', 'OTHER'
   ]
+
+  const categoryLabels = {
+    'TRAVEL': 'Travel',
+    'FOOD': 'Food & Meals', 
+    'ACCOMMODATION': 'Accommodation',
+    'TRANSPORTATION': 'Transportation',
+    'OFFICE_SUPPLIES': 'Office Supplies',
+    'SOFTWARE': 'Software',
+    'MARKETING': 'Marketing',
+    'OTHER': 'Other'
+  }
 
   // Fetch user data and expenses
   useEffect(() => {
@@ -123,6 +137,9 @@ export default function EmployeeDashboard() {
           description: newExpense.description,
           amount: parseFloat(newExpense.amount),
           category: newExpense.category,
+          currency: newExpense.currency,
+          vendor: newExpense.vendor || 'Unknown',
+          date: newExpense.date,
           receiptUrl: newExpense.receiptUrl || null
         })
       })
@@ -131,7 +148,15 @@ export default function EmployeeDashboard() {
 
       if (response.ok) {
         setSuccess('Expense submitted successfully!')
-        setNewExpense({ description: '', amount: '', category: '', receiptUrl: '' })
+        setNewExpense({ 
+          description: '', 
+          amount: '', 
+          category: '', 
+          receiptUrl: '',
+          currency: 'INR',
+          vendor: '',
+          date: new Date().toISOString().split('T')[0]
+        })
         setShowNewExpense(false)
         fetchExpenses() // Refresh expenses
       } else {
@@ -319,7 +344,7 @@ export default function EmployeeDashboard() {
                       </div>
 
                       <div>
-                        <Label htmlFor="amount">Amount ($)</Label>
+                        <Label htmlFor="amount">Amount (₹)</Label>
                         <Input
                           id="amount"
                           type="number"
@@ -332,6 +357,27 @@ export default function EmployeeDashboard() {
                       </div>
 
                       <div>
+                        <Label htmlFor="vendor">Vendor/Merchant</Label>
+                        <Input
+                          id="vendor"
+                          value={newExpense.vendor}
+                          onChange={(e) => setNewExpense(prev => ({ ...prev, vendor: e.target.value }))}
+                          placeholder="Where was this expense incurred?"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="date">Date</Label>
+                        <Input
+                          id="date"
+                          type="date"
+                          required
+                          value={newExpense.date}
+                          onChange={(e) => setNewExpense(prev => ({ ...prev, date: e.target.value }))}
+                        />
+                      </div>
+
+                      <div>
                         <Label htmlFor="category">Category</Label>
                         <Select value={newExpense.category} onValueChange={(value) => setNewExpense(prev => ({ ...prev, category: value }))}>
                           <SelectTrigger>
@@ -339,7 +385,7 @@ export default function EmployeeDashboard() {
                           </SelectTrigger>
                           <SelectContent>
                             {categories.map(cat => (
-                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                              <SelectItem key={cat} value={cat}>{categoryLabels[cat]}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -435,10 +481,10 @@ export default function EmployeeDashboard() {
                             </div>
                             <div className="flex items-center space-x-4 text-sm text-slate-600">
                               <span className="flex items-center">
-                                <DollarSign className="w-4 h-4 mr-1" />
-                                ${expense.amount.toFixed(2)}
+                                <IndianRupee className="w-4 h-4 mr-1" />
+                                ₹{Number(expense.amount || 0).toFixed(2)}
                               </span>
-                              <span>{expense.category}</span>
+                              <span>{categoryLabels[expense.category] || expense.category}</span>
                               <span>{new Date(expense.createdAt).toLocaleDateString()}</span>
                             </div>
                             {expense.receiptUrl && (
@@ -468,3 +514,5 @@ export default function EmployeeDashboard() {
     </div>
   )
 }
+
+
